@@ -33,7 +33,7 @@ library(tidyverse)
 library(diversedata)
 library(moderndive)
 #--- Add any other packages below this line ---#
-
+library(knitr)
 
 ```
 
@@ -73,9 +73,9 @@ Out of the 5 data sets listed above, choose **2** that appeal to you based on th
 
 <!-------------------------- Start your work below ---------------------------->
 
-1: Coffee Cencus
+1: Coffee cencus
 
-2: wildfire
+2: boulder-housing
 
 
 <!----------------------------------------------------------------------------->
@@ -90,25 +90,61 @@ One way to narrowing down your selection is to *explore* the data sets. Use your
 #### Data Set 1
 ```{r}
 ### Explore 3 variables of data set 1 ###
-View(coffeeCensus)
-# Age, Where do you drink your coffee, How much coffee do you drink?
+coffeeCensus <- read_csv("dat/coffeeCensus.csv")
+# Age
+coffeeCensus |>
+  group_by(`What is your age?`) |>
+  summarize(n = n()) |>
+  arrange(desc(n))
+
+# Where respondents drink coffee
+coffeeCensus |>
+  group_by(`Where do you typically drink coffee?`) |>
+  summarize(n = n()) |>
+  arrange(desc(n))
+
+# Cups of coffee per day
+coffeeCensus |>
+  group_by(`How many cups of coffee do you typically drink per day?`) |>
+  summarize(n = n()) |>
+  arrange(desc(n))
 ```
 
 
 Write your findings here.
 
-
+The largest age group was 25–34 years old, with 1,986 respondents. “At home” alone was the most common coffee-drinking location response, with 1,625 respondents. Two cups per day was the most common amount, reported by 1,663 respondents.
 
 
 #### Data Set 2
 ```{r}
 ### Explore 3 variables of data set 2 ###
+boulderData <- read_csv("dat/boulder-2020-residential_sales.csv")
+# Property location
+boulderData |>
+  group_by(LOCCITY) |>
+  summarize(n = n()) |>
+  arrange(desc(n))
+
+# Number of bedrooms
+boulderData |>
+  group_by(BEDROOMS) |>
+  summarize(n = n()) |>
+  arrange(desc(n))
+
+# Above-ground square footage
+boulderData |>
+  summarize(
+    mean_sqft = mean(ABOVE_GROUND_SQFT, na.rm = TRUE),
+    minimum_sqft = min(ABOVE_GROUND_SQFT, na.rm = TRUE),
+    maximum_sqft = max(ABOVE_GROUND_SQFT, na.rm = TRUE)
+  )
 
 ```
 
 Write your findings here.
 
-
+Longmont had the most sales records, with 1,055. Three bedrooms was the most common bedroom count, appearing in 1,152 records. Above-ground square footage averaged 1,787.99, with recorded values ranging from 0 to 7,659.
 
 
 <!----------------------------------------------------------------------------->
@@ -124,7 +160,10 @@ Write your findings here.
 It's time to choose only one data set. State the data set that you've chosen, and why you've chosen it.
 
 <!-------------------------- Start your work below ---------------------------->
-
+I chose the Boulder 2020 residential sales data because its variables are easy
+to understand. It includes numerical variables, such as bedrooms and square
+footage, and a categorical variable, property location, which makes it suitable
+for exploring relationships.
 
 
 <!----------------------------------------------------------------------------->
@@ -139,7 +178,11 @@ Write your research questions **as questions**, and be specific. You can change 
 > For example, if I had chosen a `titanic` data set for my project, I might ask, "(Primary) Is there a relationship between survival and the class of the passengers? (Secondary) Does this relationship differ by gender?"
 
 <!-------------------------- Start your work below ---------------------------->
+**Primary:** Is there a relationship between the number of bedrooms and
+above-ground square footage in the Boulder 2020 residential sales data?
 
+**Secondary:** Does the relationship between the number of bedrooms and
+above-ground square footage differ by property location?
 
 
 
@@ -168,6 +211,16 @@ Your task is to create a table that calculates the proportion of missing values 
 ```{r}
 ### Explore missingness here ###
 
+boulder_missing <- boulderData |>
+  summarize(across(everything(), ~ mean(is.na(.)))) |>
+  pivot_longer(
+    cols = everything(),
+    names_to = "variable",
+    values_to = "proportion_missing"
+  ) |>
+  arrange(desc(proportion_missing))
+
+kable(boulder_missing)
 ```
 
 
@@ -191,7 +244,10 @@ If missingness is not an issue, describe why.
 
 <!-------------------------- Start your work below ---------------------------->
 
-
+It is not an issue for my analysis because bedrooms, above-ground 
+square footage, and property location all have 0% missing values. Although other
+columns have missing values, those columns are not needed for my research
+questions. I will continue with my original research questions.
 
 
 <!----------------------------------------------------------------------------->
@@ -218,7 +274,18 @@ Show the first 6 rows of the tidied data.
 <!-------------------------- Start your work below ---------------------------->
 ```{r}
 
+# Keep the variables needed for the research questions.
+boulder_tidy <- boulderData |>
+  select(BEDROOMS, ABOVE_GROUND_SQFT, LOCCITY) |>
+  # Give the variables simpler names.
+  rename(
+    bedrooms = BEDROOMS,
+    above_ground_sqft = ABOVE_GROUND_SQFT,
+    property_location = LOCCITY
+  )
 
+# Show the first six rows.
+kable(head(boulder_tidy))
 
 
 ```
@@ -235,7 +302,26 @@ Show the outputted table.
 <!-------------------------- Start your work below ---------------------------->
 ```{r}
 
+# Put the numeric variables into long form.
+boulder_numeric <- boulder_tidy |>
+  select(bedrooms, above_ground_sqft) |>
+  pivot_longer(
+    cols = everything(),
+    names_to = "variable",
+    values_to = "value"
+  )
 
+# Calculate summaries, excluding missing values.
+boulder_summary <- boulder_numeric |>
+  group_by(variable) |>
+  summarize(
+    mean = mean(value, na.rm = TRUE),
+    minimum = min(value, na.rm = TRUE),
+    maximum = max(value, na.rm = TRUE)
+  )
+
+# Display the table.
+kable(boulder_summary)
 
 
 ```
