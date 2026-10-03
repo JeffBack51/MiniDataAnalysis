@@ -91,7 +91,7 @@ One way to narrowing down your selection is to *explore* the data sets. Use your
 ```{r}
 ### Explore 3 variables of data set 1 ###
 View(coffeeCensus)
-# Age, Where do you drink your coffee, What type of coffee?
+# Age, Where do you drink your coffee, How much coffee do you drink?
 ```
 
 
